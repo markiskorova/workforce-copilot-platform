@@ -1,0 +1,12 @@
+{
+  "name": "workforce-copilot-platform",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace @workforce-copilot/web",
+    "build:web": "npm run build --workspace @workforce-copilot/web",
+    "lint:web": "npm run lint --workspace @workforce-copilot/web"
+  }
+}
