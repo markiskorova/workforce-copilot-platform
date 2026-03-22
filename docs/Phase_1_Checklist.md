@@ -46,16 +46,16 @@ Definition of done:
 Create the minimum database structure needed for document ingestion and chat runs.
 
 Checklist:
-- add schema for `documents`
-- add schema for `chunks`
-- add schema for `runs`
-- optionally add schema for `conversations`
-- add migration setup
-- connect api to PostgreSQL
+- [x] add schema for `documents`
+- [x] add schema for `chunks`
+- [x] add schema for `runs`
+- [x] optionally add schema for `conversations`
+- [x] add migration setup
+- [x] connect api to PostgreSQL
 
 Definition of done:
-- the api can create and read core records
-- document and run metadata persist correctly
+- [x] the api can create and read core records
+- [x] document and run metadata persist correctly
 
 ## Part 3 - Document Upload and Parsing
 Implement the first usable ingestion entry point.

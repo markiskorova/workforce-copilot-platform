@@ -20,9 +20,10 @@ services:
     working_dir: /workspace/apps/api
     command: >
       sh -c "pip install --no-cache-dir -r requirements.txt &&
+      alembic upgrade head &&
       uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://workforce:workforce@postgres:5432/workforce_copilot}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://workforce:workforce@postgres:5432/workforce_copilot}
     volumes:
       - .:/workspace
     ports:
