@@ -260,15 +260,16 @@ Even if only one provider is fully active in the MVP, the abstraction layer itse
 ### Retrieval pipeline
 
 1. Upload document
-2. Parse and normalize
-3. Chunk document
-4. Attach metadata
-5. Generate embeddings
-6. Store vectors and source metadata
-7. Retrieve top-k relevant chunks
-8. Optionally rerank results
-9. Package citations into response
-10. Render citations in UI
+2. Create logical document record plus immutable document version
+3. Parse and normalize
+4. Chunk document
+5. Attach metadata
+6. Generate embeddings
+7. Store vectors and source metadata for one active index version
+8. Retrieve top-k relevant chunks from the active index version
+9. Optionally rerank results
+10. Package citations into response
+11. Render citations in UI
 
 ### Document types for MVP
 
@@ -283,6 +284,7 @@ Even if only one provider is fully active in the MVP, the abstraction layer itse
 Each stored chunk should include:
 
 - document ID
+- document version ID
 - title
 - section or heading
 - chunk index
@@ -290,6 +292,7 @@ Each stored chunk should include:
 - source URI or file reference
 - access scope
 - ingestion timestamp
+- parser/chunking version
 
 ### Retrieval output format
 
@@ -305,6 +308,8 @@ Return:
 - **Local dev:** FAISS
 - **Main app:** Qdrant
 - **Stretch adapter:** Pinecone
+
+For Phase 1, keep a single active local index version and record which index version answered a retrieval-backed run.
 
 That gives broad coverage without overcomplicating the first version.
 
@@ -466,13 +471,35 @@ Use Prometheus + Grafana or CloudWatch dashboards to track:
 - access_scope
 - uploaded_at
 
-#### chunks
+#### document_versions
 - id
 - document_id
+- version_number
+- storage_uri
+- content_hash
+- parser_version
+- chunking_version
+- status
+- created_at
+
+#### chunks
+- id
+- document_version_id
 - chunk_index
 - content
 - metadata_json
 - embedding_status
+
+#### index_versions
+- id
+- workspace_id
+- name
+- embedding_model
+- chunking_version
+- parser_version
+- status
+- is_active
+- built_at
 
 #### conversations
 - id
@@ -483,6 +510,7 @@ Use Prometheus + Grafana or CloudWatch dashboards to track:
 #### runs
 - id
 - conversation_id
+- index_version_id
 - prompt_text
 - model_name
 - status
@@ -535,6 +563,8 @@ Ship a working employee copilot with grounded answers.
 - LlamaIndex ingestion flow
 - FAISS or Qdrant retrieval
 - document upload
+- lightweight document versioning
+- one active local index version for retrieval
 - citations in answer view
 - PostgreSQL persistence
 - Docker local setup

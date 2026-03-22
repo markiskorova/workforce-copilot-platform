@@ -10,6 +10,7 @@ Phase 1 remains the same MVP described in the existing planning docs:
 - one upload flow
 - one retrieval path
 - grounded answers with citations
+- lightweight base versioning for uploaded content and retrieval state
 - local Docker-based development setup
 
 ## MVP Slice Decisions
@@ -18,9 +19,21 @@ To keep the first version narrow and achievable, use these defaults:
 - workspace: single IT + HR assistant
 - model provider: OpenAI
 - vector store: FAISS for local MVP
+- base versioning: immutable `document_versions`, not full corpus snapshots
+- index versioning: one active local `index_version` for retrieval
 - auth: mocked or minimal internal user context
 - storage: PostgreSQL for metadata plus local file storage
 - document scope: one or two supported formats at first
+
+## Versioning and Indexing Approach
+Phase 1 should include lightweight version-awareness so ingestion and retrieval are traceable without overcomplicating the MVP.
+
+- `documents` represent stable logical source records
+- each upload or reindex creates an immutable `document_version`
+- `chunks` should belong to a `document_version`
+- retrieval should use one active local `index_version`
+- answer runs should record which `index_version` served the response once retrieval is implemented
+- full corpus snapshots and rollback flows stay out of scope for MVP
 
 ## Recommended Build Order
 
@@ -57,46 +70,54 @@ Definition of done:
 - [x] the api can create and read core records
 - [x] document and run metadata persist correctly
 
+Versioning follow-up before Part 3:
+- [x] add schema for `document_versions`
+- [x] move chunks to reference `document_version` rather than only the logical document
+- [x] reserve an `index_versions` concept for retrieval builds
+
 ## Part 3 - Document Upload and Parsing
 Implement the first usable ingestion entry point.
 
 Checklist:
-- add `POST /api/v1/documents/upload`
-- store uploaded files locally
-- parse supported documents into text
-- normalize extracted text
-- save document metadata and raw extracted content references
+- [x] add `POST /api/v1/documents/upload`
+- [x] create or update the logical `document` record
+- [x] create an immutable `document_version` for each upload or reindex
+- [x] store uploaded files locally
+- [x] parse supported documents into text
+- [x] normalize extracted text
+- [x] save document version metadata, content hash, and raw extracted content references
 
 Definition of done:
-- a user can upload a supported document
-- the backend stores the file and extracted text successfully
+- [x] a user can upload a supported document
+- [x] the backend stores the file, extracted text, and version metadata successfully
 
 ## Part 4 - Chunking and Ingestion Pipeline
 Convert parsed text into structured retrieval units.
 
 Checklist:
 - split normalized text into chunks
-- attach chunk metadata
-- persist chunks in the database
+- attach chunk metadata plus parser/chunking version details
+- persist chunks in the database against the `document_version`
 - keep chunking simple and deterministic
 - make ingestion traceable for debugging
 
 Definition of done:
 - one uploaded document becomes chunk records
-- chunk metadata is available for later retrieval and citation use
+- chunk metadata is version-aware and available for later retrieval and citation use
 
 ## Part 5 - Embeddings and Retrieval
 Add the first working retrieval layer for grounded answers.
 
 Checklist:
 - generate embeddings for chunks
-- store embeddings in FAISS
+- store embeddings in FAISS for one active local `index_version`
 - add retrieval logic for top matching chunks
+- track which `index_version` served retrieval results
 - add a retrieval-focused endpoint or internal service boundary
 - verify the retrieval path with sample policy documents
 
 Definition of done:
-- a test query returns relevant chunks from uploaded content
+- a test query returns relevant chunks from the active index version
 - retrieval is stable enough for a basic demo
 
 ## Part 6 - Answer Generation and Citations

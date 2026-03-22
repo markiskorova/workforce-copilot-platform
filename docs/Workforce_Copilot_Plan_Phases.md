@@ -99,7 +99,7 @@ An employee can open the portal, ask a question about a policy or workflow, and 
 - endpoint for chat query submission
 - endpoint for document upload
 - endpoint for retrieving answer/source details
-- basic persistence for documents, chunks, and runs
+- basic persistence for documents, document versions, chunks, index metadata, and runs
 
 ### LLM integration
 - one active model provider, preferably OpenAI
@@ -107,11 +107,13 @@ An employee can open the portal, ask a question about a policy or workflow, and 
 
 ### RAG
 - upload document
+- create logical document record + immutable document version
 - parse document
 - normalize extracted text
 - chunk text
 - attach metadata
 - generate embeddings
+- build one active local retrieval index version
 - store embeddings in vector store
 - retrieve relevant chunks for answering
 - return cited sources with answer
@@ -120,6 +122,7 @@ An employee can open the portal, ask a question about a policy or workflow, and 
 - PostgreSQL for app data and run metadata
 - local file storage or S3-compatible abstraction for uploaded docs
 - FAISS locally or Qdrant if setup remains manageable
+- lightweight version-aware schema for document versions and active index metadata
 
 ### Security
 - basic auth layer or mocked internal user context
@@ -135,13 +138,14 @@ An employee can open the portal, ask a question about a policy or workflow, and 
 This should be implemented in Phase 1, even in simple form.
 
 1. Accept uploaded file
-2. Parse file into text
-3. Clean and normalize text
-4. Split into chunks
-5. Attach metadata to each chunk
-6. Generate embeddings
-7. Persist chunk records and vector entries
-8. Make chunks retrievable for answer generation
+2. Create logical document + immutable document version
+3. Parse file into text
+4. Clean and normalize text
+5. Split into chunks
+6. Attach metadata to each chunk, including versioning metadata
+7. Generate embeddings
+8. Persist chunk records and vector entries for one active local index version
+9. Make chunks retrievable for answer generation
 
 ## Deliverables
 - working web UI
@@ -149,7 +153,7 @@ This should be implemented in Phase 1, even in simple form.
 - document upload flow
 - retrieval-backed question answering
 - citations rendered in UI
-- basic schema for documents, chunks, runs, and feedback placeholders
+- lightweight version-aware schema for documents, document versions, chunks, index metadata, runs, and feedback placeholders
 - Dockerized local run
 - short README with setup + demo steps
 
@@ -157,8 +161,10 @@ This should be implemented in Phase 1, even in simple form.
 Phase 1 is complete when all of the following are true:
 
 - a user can upload one or more policy/process documents
+- uploaded content is traceable through document versions without destructive overwrite
 - the system can answer at least a small set of grounded document questions
 - the UI shows the supporting chunks or citations used
+- retrieval can be tied to one active local index version
 - the app runs locally through Docker without manual patchwork
 - the architecture is clean enough to extend in later phases
 
@@ -167,6 +173,7 @@ Phase 1 is complete when all of the following are true:
 - advanced reranking
 - reusable component package extraction
 - async ingestion workers
+- full corpus snapshot versioning and rollback workflows
 - Prometheus/Grafana
 - AWS deployment
 - evaluation harness
@@ -211,6 +218,7 @@ Phase 1 proves the product. Phase 2 makes the core knowledge pipeline stronger s
 - chunk status fields
 - retrieval trace metadata
 - cleaner source references
+- richer corpus/index comparison workflows if needed beyond MVP
 
 ## Deliverables
 - improved preprocessing pipeline

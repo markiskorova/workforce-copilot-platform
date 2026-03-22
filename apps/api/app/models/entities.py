@@ -4,7 +4,16 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, Uuid
+from sqlalchemy import (
+    BigInteger,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    Uuid,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
@@ -59,19 +68,58 @@ class Document(Base):
     )
 
     chunks: Mapped[list["Chunk"]] = relationship(
+        secondary="document_versions",
+        primaryjoin="Document.id == DocumentVersion.document_id",
+        secondaryjoin="DocumentVersion.id == Chunk.document_version_id",
+        viewonly=True,
+    )
+    versions: Mapped[list["DocumentVersion"]] = relationship(
         back_populates="document",
+        cascade="all, delete-orphan",
+    )
+
+
+class DocumentVersion(Base):
+    __tablename__ = "document_versions"
+    __table_args__ = (UniqueConstraint("document_id", "version_number"),)
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    document_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("documents.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_type: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    storage_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    extracted_text_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    parser_version: Mapped[str] = mapped_column(String(100), nullable=False)
+    normalization_version: Mapped[str] = mapped_column(String(100), nullable=False)
+    source_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="parsed", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utcnow,
+        nullable=False,
+    )
+
+    document: Mapped[Document] = relationship(back_populates="versions")
+    chunks: Mapped[list["Chunk"]] = relationship(
+        back_populates="document_version",
         cascade="all, delete-orphan",
     )
 
 
 class Chunk(Base):
     __tablename__ = "chunks"
-    __table_args__ = (UniqueConstraint("document_id", "chunk_index"),)
+    __table_args__ = (UniqueConstraint("document_version_id", "chunk_index"),)
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
-    document_id: Mapped[UUID] = mapped_column(
+    document_version_id: Mapped[UUID] = mapped_column(
         Uuid,
-        ForeignKey("documents.id", ondelete="CASCADE"),
+        ForeignKey("document_versions.id", ondelete="CASCADE"),
         nullable=False,
     )
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -87,7 +135,7 @@ class Chunk(Base):
         nullable=False,
     )
 
-    document: Mapped[Document] = relationship(back_populates="chunks")
+    document_version: Mapped[DocumentVersion] = relationship(back_populates="chunks")
 
 
 class Run(Base):
