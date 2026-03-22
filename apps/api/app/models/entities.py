@@ -97,7 +97,9 @@ class DocumentVersion(Base):
     content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     parser_version: Mapped[str] = mapped_column(String(100), nullable=False)
     normalization_version: Mapped[str] = mapped_column(String(100), nullable=False)
+    chunking_version: Mapped[str | None] = mapped_column(String(100), nullable=True)
     source_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    chunk_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     status: Mapped[str] = mapped_column(String(50), default="parsed", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -136,6 +138,70 @@ class Chunk(Base):
     )
 
     document_version: Mapped[DocumentVersion] = relationship(back_populates="chunks")
+    index_entries: Mapped[list["IndexEntry"]] = relationship(
+        back_populates="chunk",
+        cascade="all, delete-orphan",
+    )
+
+
+class IndexVersion(Base):
+    __tablename__ = "index_versions"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    embedding_provider: Mapped[str] = mapped_column(String(100), nullable=False)
+    embedding_model: Mapped[str] = mapped_column(String(255), nullable=False)
+    vector_dimensions: Mapped[int] = mapped_column(Integer, nullable=False)
+    chunking_version: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    faiss_index_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    status: Mapped[str] = mapped_column(String(50), default="building", nullable=False)
+    is_active: Mapped[bool] = mapped_column(default=False, nullable=False)
+    document_version_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    chunk_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utcnow,
+        nullable=False,
+    )
+    built_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    entries: Mapped[list["IndexEntry"]] = relationship(
+        back_populates="index_version",
+        cascade="all, delete-orphan",
+    )
+    runs: Mapped[list["Run"]] = relationship(back_populates="index_version")
+
+
+class IndexEntry(Base):
+    __tablename__ = "index_entries"
+    __table_args__ = (
+        UniqueConstraint("index_version_id", "vector_position"),
+        UniqueConstraint("index_version_id", "chunk_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    index_version_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("index_versions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    chunk_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("chunks.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    vector_position: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utcnow,
+        nullable=False,
+    )
+
+    index_version: Mapped[IndexVersion] = relationship(back_populates="entries")
+    chunk: Mapped[Chunk] = relationship(back_populates="index_entries")
 
 
 class Run(Base):
@@ -146,6 +212,11 @@ class Run(Base):
         Uuid,
         ForeignKey("conversations.id", ondelete="CASCADE"),
         nullable=False,
+    )
+    index_version_id: Mapped[UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("index_versions.id", ondelete="SET NULL"),
+        nullable=True,
     )
     question: Mapped[str] = mapped_column(Text, nullable=False)
     answer: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -163,3 +234,4 @@ class Run(Base):
     )
 
     conversation: Mapped[Conversation] = relationship(back_populates="runs")
+    index_version: Mapped[IndexVersion | None] = relationship(back_populates="runs")

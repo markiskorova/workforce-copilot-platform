@@ -10,3 +10,5 @@ __pycache__/
 .DS_Store
 data/uploads/*
 !data/uploads/.gitkeep
+data/indexes/*
+!data/indexes/.gitkeep

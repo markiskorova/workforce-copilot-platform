@@ -8,7 +8,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, UploadFile, status
 
-from ..config import get_repo_root, get_uploads_root
+from ..config import get_uploads_root, to_repo_relative_path
 
 SUPPORTED_SUFFIXES: dict[str, str] = {
     ".txt": "plain_text_v1",
@@ -52,11 +52,6 @@ def normalize_text(raw_text: str) -> str:
     normalized = "\n".join(line.rstrip() for line in normalized.split("\n"))
     normalized = re.sub(r"\n{3,}", "\n\n", normalized)
     return normalized.strip()
-
-
-def to_repo_relative_path(path: Path) -> str:
-    repo_root = get_repo_root()
-    return path.resolve().relative_to(repo_root).as_posix()
 
 
 async def parse_upload(file: UploadFile) -> ParsedUpload:

@@ -95,30 +95,30 @@ Definition of done:
 Convert parsed text into structured retrieval units.
 
 Checklist:
-- split normalized text into chunks
-- attach chunk metadata plus parser/chunking version details
-- persist chunks in the database against the `document_version`
-- keep chunking simple and deterministic
-- make ingestion traceable for debugging
+- [x] split normalized text into chunks
+- [x] attach chunk metadata plus parser/chunking version details
+- [x] persist chunks in the database against the `document_version`
+- [x] keep chunking simple and deterministic
+- [x] make ingestion traceable for debugging
 
 Definition of done:
-- one uploaded document becomes chunk records
-- chunk metadata is version-aware and available for later retrieval and citation use
+- [x] one uploaded document becomes chunk records
+- [x] chunk metadata is version-aware and available for later retrieval and citation use
 
 ## Part 5 - Embeddings and Retrieval
 Add the first working retrieval layer for grounded answers.
 
 Checklist:
-- generate embeddings for chunks
-- store embeddings in FAISS for one active local `index_version`
-- add retrieval logic for top matching chunks
-- track which `index_version` served retrieval results
-- add a retrieval-focused endpoint or internal service boundary
-- verify the retrieval path with sample policy documents
+- [x] generate embeddings for chunks
+- [x] store embeddings in FAISS for one active local `index_version`
+- [x] add retrieval logic for top matching chunks
+- [x] track which `index_version` served retrieval results
+- [x] add a retrieval-focused endpoint or internal service boundary
+- [x] verify the retrieval path with sample policy documents
 
 Definition of done:
-- a test query returns relevant chunks from the active index version
-- retrieval is stable enough for a basic demo
+- [x] a test query returns relevant chunks from the active index version
+- [x] retrieval is stable enough for a basic demo
 
 ## Part 6 - Answer Generation and Citations
 Connect retrieval results to the model and return grounded responses.
